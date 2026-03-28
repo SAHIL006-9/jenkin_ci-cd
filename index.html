@@ -4,13 +4,337 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FinFlow — Sales Dashboard</title>
-  <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ─── Reset & Base ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #f4f5f7;
+  --surface:   #ffffff;
+  --border:    #e8eaed;
+  --text-pri:  #111827;
+  --text-sec:  #6b7280;
+  --text-mute: #9ca3af;
+  --green:     #10b981;
+  --green-bg:  #ecfdf5;
+  --blue:      #3b82f6;
+  --blue-bg:   #eff6ff;
+  --amber:     #f59e0b;
+  --amber-bg:  #fffbeb;
+  --purple:    #8b5cf6;
+  --purple-bg: #f5f3ff;
+  --red:       #ef4444;
+  --red-bg:    #fef2f2;
+  --sidebar-w: 230px;
+  --radius:    14px;
+  --shadow:    0 1px 3px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.05);
+}
+
+html, body {
+  height: 100%;
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text-pri);
+  display: flex;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ─── Sidebar ─── */
+.sidebar {
+  width: var(--sidebar-w);
+  min-height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 8px 28px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.logo-icon {
+  width: 34px; height: 34px;
+  background: var(--text-pri);
+  border-radius: 9px;
+  display: grid; place-items: center;
+  color: #fff; font-size: 14px;
+}
+.logo-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; letter-spacing: -.4px;
+}
+.nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.nav-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--text-sec);
+  text-decoration: none;
+  font-size: 14px; font-weight: 500;
+  transition: background .18s, color .18s;
+}
+.nav-item i { width: 16px; text-align: center; font-size: 13px; }
+.nav-item:hover { background: var(--bg); color: var(--text-pri); }
+.nav-item.active { background: var(--text-pri); color: #fff; }
+.sidebar-footer { padding-top: 20px; border-top: 1px solid var(--border); }
+.user-info { display: flex; align-items: center; gap: 10px; padding: 6px 8px; }
+.avatar {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  color: #fff; font-size: 12px; font-weight: 600;
+}
+.user-name { font-size: 13px; font-weight: 600; }
+.user-role { font-size: 11px; color: var(--text-mute); }
+
+/* ─── Main ─── */
+.main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  padding: 28px 32px;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+/* ─── Topbar ─── */
+.topbar {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap; gap: 12px;
+}
+.page-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px; font-weight: 700; letter-spacing: -.5px;
+}
+.page-sub { font-size: 13px; color: var(--text-mute); margin-top: 3px; display: block; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.date-range {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; color: var(--text-sec);
+  transition: border-color .18s;
+}
+.date-range:hover { border-color: #c0c4cc; }
+.btn-export {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--text-pri); color: #fff;
+  border: none; border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: opacity .18s;
+}
+.btn-export:hover { opacity: .85; }
+.notif {
+  position: relative;
+  width: 38px; height: 38px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font-size: 14px; cursor: pointer; color: var(--text-sec);
+}
+.badge {
+  position: absolute; top: 5px; right: 5px;
+  width: 16px; height: 16px;
+  background: var(--red); color: #fff;
+  border-radius: 50%; font-size: 9px; font-weight: 700;
+  display: grid; place-items: center;
+}
+
+/* ─── KPI Grid ─── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px; margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 22px 18px;
+  box-shadow: var(--shadow);
+  opacity: 0; transform: translateY(16px);
+  transition: opacity .4s ease, transform .4s ease, box-shadow .2s;
+}
+.kpi-card.visible { opacity: 1; transform: translateY(0); }
+.kpi-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,.1); }
+.kpi-header {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 14px;
+}
+.kpi-label {
+  font-size: 12px; font-weight: 600; color: var(--text-sec);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.kpi-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  display: grid; place-items: center; font-size: 14px;
+}
+.kpi-icon.green  { background: var(--green-bg);  color: var(--green); }
+.kpi-icon.blue   { background: var(--blue-bg);   color: var(--blue); }
+.kpi-icon.amber  { background: var(--amber-bg);  color: var(--amber); }
+.kpi-icon.purple { background: var(--purple-bg); color: var(--purple); }
+.kpi-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; font-weight: 700;
+  letter-spacing: -.5px; margin-bottom: 10px;
+}
+.kpi-change { font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+.kpi-change.up   { color: var(--green); }
+.kpi-change.down { color: var(--red); }
+
+/* ─── Charts Row ─── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 18px; margin-bottom: 24px;
+}
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px; box-shadow: var(--shadow);
+  opacity: 0; transform: translateY(16px);
+  transition: opacity .45s ease .15s, transform .45s ease .15s;
+}
+.chart-card.visible { opacity: 1; transform: translateY(0); }
+.chart-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+}
+.chart-title { font-size: 15px; font-weight: 600; }
+.chart-sub { font-size: 12px; color: var(--text-mute); margin-top: 3px; }
+.chart-tabs { display: flex; gap: 4px; }
+.tab {
+  padding: 6px 14px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  color: var(--text-sec);
+  transition: background .18s, color .18s, border-color .18s;
+}
+.tab.active { background: var(--text-pri); color: #fff; border-color: var(--text-pri); }
+.donut-legend { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.legend-item {
+  display: flex; align-items: center;
+  justify-content: space-between; font-size: 12px;
+}
+.legend-left { display: flex; align-items: center; gap: 8px; color: var(--text-sec); }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.legend-pct { font-weight: 600; color: var(--text-pri); }
+
+/* ─── Bottom Row ─── */
+.bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 18px;
+}
+.table-card, .products-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px; box-shadow: var(--shadow);
+  opacity: 0; transform: translateY(16px);
+  transition: opacity .45s ease .25s, transform .45s ease .25s;
+}
+.table-card.visible, .products-card.visible { opacity: 1; transform: translateY(0); }
+.table-header {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 18px;
+}
+.view-all {
+  font-size: 12px; color: var(--blue);
+  font-weight: 500; text-decoration: none;
+  display: flex; align-items: center; gap: 4px;
+}
+.view-all:hover { text-decoration: underline; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  text-align: left; font-size: 11px; font-weight: 600;
+  color: var(--text-mute); text-transform: uppercase;
+  letter-spacing: .5px; padding: 0 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 13px 0; font-size: 13px;
+  border-bottom: 1px solid var(--bg);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.client-cell { display: flex; align-items: center; gap: 9px; }
+.client-avatar {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 700;
+  color: #fff; flex-shrink: 0;
+}
+.client-name { font-weight: 500; }
+.status-badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+.status-badge.paid    { background: var(--green-bg); color: var(--green); }
+.status-badge.pending { background: var(--amber-bg); color: var(--amber); }
+.status-badge.failed  { background: var(--red-bg);   color: var(--red); }
+
+/* ─── Products ─── */
+.product-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--bg);
+}
+.product-item:last-child { border-bottom: none; }
+.product-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: grid; place-items: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.product-info { flex: 1; min-width: 0; }
+.product-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.product-units { font-size: 11px; color: var(--text-mute); margin-top: 2px; }
+.product-bar-bg { height: 5px; background: var(--bg); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+.product-bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+.product-revenue { font-size: 13px; font-weight: 600; white-space: nowrap; margin-left: 8px; }
+
+/* ─── Responsive ─── */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .charts-row { grid-template-columns: 1fr; }
+  .bottom-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .main { margin-left: 0; padding: 20px 16px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
 
-  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="logo">
       <span class="logo-icon"><i class="fa-solid fa-chart-line"></i></span>
@@ -35,10 +359,7 @@
     </div>
   </aside>
 
-  <!-- Main Content -->
   <main class="main">
-
-    <!-- Topbar -->
     <header class="topbar">
       <div class="topbar-left">
         <h1 class="page-title">Sales Overview</h1>
@@ -55,59 +376,56 @@
       </div>
     </header>
 
-    <!-- KPI Cards -->
     <section class="kpi-grid">
-      <div class="kpi-card" data-delay="0">
+      <div class="kpi-card">
         <div class="kpi-header">
           <span class="kpi-label">Total Revenue</span>
           <span class="kpi-icon green"><i class="fa-solid fa-indian-rupee-sign"></i></span>
         </div>
-        <div class="kpi-value" data-target="24,81,500">₹0</div>
+        <div class="kpi-value">₹24,81,500</div>
         <div class="kpi-change up"><i class="fa-solid fa-arrow-trend-up"></i> +12.4% vs last month</div>
       </div>
-      <div class="kpi-card" data-delay="100">
+      <div class="kpi-card">
         <div class="kpi-header">
           <span class="kpi-label">Total Orders</span>
           <span class="kpi-icon blue"><i class="fa-solid fa-cart-shopping"></i></span>
         </div>
-        <div class="kpi-value" data-target="1,284">0</div>
+        <div class="kpi-value">1,284</div>
         <div class="kpi-change up"><i class="fa-solid fa-arrow-trend-up"></i> +8.1% vs last month</div>
       </div>
-      <div class="kpi-card" data-delay="200">
+      <div class="kpi-card">
         <div class="kpi-header">
           <span class="kpi-label">Avg. Order Value</span>
           <span class="kpi-icon amber"><i class="fa-solid fa-tag"></i></span>
         </div>
-        <div class="kpi-value" data-target="₹19,325">₹0</div>
+        <div class="kpi-value">₹19,325</div>
         <div class="kpi-change down"><i class="fa-solid fa-arrow-trend-down"></i> -2.3% vs last month</div>
       </div>
-      <div class="kpi-card" data-delay="300">
+      <div class="kpi-card">
         <div class="kpi-header">
           <span class="kpi-label">New Clients</span>
           <span class="kpi-icon purple"><i class="fa-solid fa-user-plus"></i></span>
         </div>
-        <div class="kpi-value" data-target="87">0</div>
+        <div class="kpi-value">87</div>
         <div class="kpi-change up"><i class="fa-solid fa-arrow-trend-up"></i> +19.6% vs last month</div>
       </div>
     </section>
 
-    <!-- Charts Row -->
     <section class="charts-row">
-      <div class="chart-card wide">
+      <div class="chart-card">
         <div class="chart-header">
           <div>
             <h2 class="chart-title">Revenue Trend</h2>
             <p class="chart-sub">Monthly revenue for 2026</p>
           </div>
           <div class="chart-tabs">
-            <button class="tab active" onclick="switchChart(this, 'revenue')">Revenue</button>
-            <button class="tab" onclick="switchChart(this, 'orders')">Orders</button>
+            <button class="tab active" onclick="switchChart(this,'revenue')">Revenue</button>
+            <button class="tab" onclick="switchChart(this,'orders')">Orders</button>
           </div>
         </div>
         <canvas id="lineChart" height="110"></canvas>
       </div>
-
-      <div class="chart-card narrow">
+      <div class="chart-card">
         <div class="chart-header">
           <div>
             <h2 class="chart-title">Sales by Category</h2>
@@ -119,10 +437,7 @@
       </div>
     </section>
 
-    <!-- Bottom Row -->
     <section class="bottom-row">
-
-      <!-- Recent Transactions -->
       <div class="table-card">
         <div class="table-header">
           <h2 class="chart-title">Recent Transactions</h2>
@@ -131,18 +446,12 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Client</th>
-              <th>Product</th>
-              <th>Amount</th>
-              <th>Date</th>
-              <th>Status</th>
+              <th>Client</th><th>Product</th><th>Amount</th><th>Date</th><th>Status</th>
             </tr>
           </thead>
           <tbody id="transactionTableBody"></tbody>
         </table>
       </div>
-
-      <!-- Top Products -->
       <div class="products-card">
         <div class="table-header">
           <h2 class="chart-title">Top Products</h2>
@@ -150,12 +459,169 @@
         </div>
         <div class="product-list" id="productList"></div>
       </div>
-
     </section>
-
   </main>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script src="script.js"></script>
+<script>
+const revenueData = {
+  labels: ['Jan','Feb','Mar','Apr','May','Jun'],
+  datasets:[{
+    label:'Revenue (₹)',
+    data:[1840000,2100000,1950000,2430000,2210000,2481500],
+    borderColor:'#111827', backgroundColor:'rgba(17,24,39,0.07)',
+    borderWidth:2.5, fill:true, tension:0.42,
+    pointBackgroundColor:'#111827', pointRadius:4, pointHoverRadius:6
+  }]
+};
+const ordersData = {
+  labels: ['Jan','Feb','Mar','Apr','May','Jun'],
+  datasets:[{
+    label:'Orders',
+    data:[920,1050,980,1180,1100,1284],
+    borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.08)',
+    borderWidth:2.5, fill:true, tension:0.42,
+    pointBackgroundColor:'#3b82f6', pointRadius:4, pointHoverRadius:6
+  }]
+};
+const donutCategories = [
+  {label:'Software',  value:38, color:'#111827'},
+  {label:'Hardware',  value:27, color:'#3b82f6'},
+  {label:'Services',  value:21, color:'#10b981'},
+  {label:'Consulting',value:14, color:'#f59e0b'},
+];
+const transactions = [
+  {client:'Reliance Tech', initials:'RT', color:'#3b82f6', product:'Cloud Suite Pro',   amount:'₹1,24,000', date:'28 Mar 2026', status:'paid'},
+  {client:'Wipro Ltd',     initials:'WL', color:'#10b981', product:'DevOps Starter',    amount:'₹88,500',   date:'27 Mar 2026', status:'paid'},
+  {client:'Infosys BPO',   initials:'IB', color:'#8b5cf6', product:'Security Module',   amount:'₹2,10,000', date:'26 Mar 2026', status:'pending'},
+  {client:'HCL Systems',   initials:'HS', color:'#f59e0b', product:'Analytics Pack',    amount:'₹76,300',   date:'25 Mar 2026', status:'paid'},
+  {client:'TCS Ventures',  initials:'TV', color:'#ef4444', product:'Enterprise License',amount:'₹3,50,000', date:'24 Mar 2026', status:'failed'},
+  {client:'Tata Digital',  initials:'TD', color:'#0ea5e9', product:'Cloud Suite Basic', amount:'₹55,000',   date:'23 Mar 2026', status:'paid'},
+];
+const products = [
+  {name:'Cloud Suite Pro',    units:'412 units',revenue:'₹8,24,000',pct:92,color:'#111827',icon:'☁️', bg:'#f3f4f6'},
+  {name:'DevOps Starter',     units:'287 units',revenue:'₹5,10,650',pct:71,color:'#3b82f6',icon:'⚙️', bg:'#eff6ff'},
+  {name:'Security Module',    units:'201 units',revenue:'₹4,22,100',pct:58,color:'#10b981',icon:'🔐', bg:'#ecfdf5'},
+  {name:'Analytics Pack',     units:'189 units',revenue:'₹3,78,000',pct:49,color:'#f59e0b',icon:'📊', bg:'#fffbeb'},
+  {name:'Enterprise License', units:'95 units', revenue:'₹2,46,750',pct:31,color:'#8b5cf6',icon:'🏢', bg:'#f5f3ff'},
+];
+
+let lineChart;
+function buildLineChart(dataset) {
+  const ctx = document.getElementById('lineChart').getContext('2d');
+  if (lineChart) lineChart.destroy();
+  lineChart = new Chart(ctx, {
+    type:'line', data:dataset,
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#111827', titleColor:'#fff', bodyColor:'#d1d5db',
+          padding:12, cornerRadius:10,
+          callbacks:{label: ctx => dataset===revenueData
+            ? ' ₹'+ctx.parsed.y.toLocaleString('en-IN')
+            : ' '+ctx.parsed.y.toLocaleString()+' orders'}
+        }
+      },
+      scales:{
+        x:{grid:{color:'#f3f4f6'}, ticks:{color:'#9ca3af',font:{family:'DM Sans',size:11}}},
+        y:{grid:{color:'#f3f4f6'}, ticks:{color:'#9ca3af',font:{family:'DM Sans',size:11},
+          callback: v => dataset===revenueData ? '₹'+(v/100000).toFixed(1)+'L' : v}}
+      }
+    }
+  });
+}
+
+function switchChart(btn, type) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  buildLineChart(type==='revenue' ? revenueData : ordersData);
+}
+
+function buildDonutChart() {
+  const ctx = document.getElementById('donutChart').getContext('2d');
+  new Chart(ctx, {
+    type:'doughnut',
+    data:{
+      labels: donutCategories.map(d=>d.label),
+      datasets:[{data:donutCategories.map(d=>d.value), backgroundColor:donutCategories.map(d=>d.color), borderWidth:0, hoverOffset:6}]
+    },
+    options:{
+      cutout:'70%', responsive:true,
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#111827',titleColor:'#fff',bodyColor:'#d1d5db',padding:10,cornerRadius:10,
+          callbacks:{label: ctx => `  ${ctx.label}: ${ctx.parsed}%`}}
+      }
+    }
+  });
+  const legend = document.getElementById('donutLegend');
+  donutCategories.forEach(d => {
+    legend.innerHTML += `<div class="legend-item"><div class="legend-left"><div class="legend-dot" style="background:${d.color}"></div><span>${d.label}</span></div><span class="legend-pct">${d.value}%</span></div>`;
+  });
+}
+
+function buildTransactions() {
+  const tbody = document.getElementById('transactionTableBody');
+  transactions.forEach(t => {
+    tbody.innerHTML += `<tr>
+      <td><div class="client-cell"><div class="client-avatar" style="background:${t.color}">${t.initials}</div><span class="client-name">${t.client}</span></div></td>
+      <td style="color:var(--text-sec)">${t.product}</td>
+      <td style="font-weight:600">${t.amount}</td>
+      <td style="color:var(--text-mute)">${t.date}</td>
+      <td><span class="status-badge ${t.status}">${t.status.charAt(0).toUpperCase()+t.status.slice(1)}</span></td>
+    </tr>`;
+  });
+}
+
+function buildProducts() {
+  const list = document.getElementById('productList');
+  products.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'product-item';
+    item.innerHTML = `
+      <div class="product-icon" style="background:${p.bg}">${p.icon}</div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-units">${p.units}</div>
+        <div class="product-bar-bg"><div class="product-bar-fill" style="width:0%;background:${p.color}" data-pct="${p.pct}"></div></div>
+      </div>
+      <div class="product-revenue">${p.revenue}</div>`;
+    list.appendChild(item);
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.product-bar-fill').forEach(bar => bar.style.width = bar.dataset.pct + '%');
+  }, 500);
+}
+
+function setupNav() {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+}
+
+function animateCards() {
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, {threshold: 0.1});
+  document.querySelectorAll('.kpi-card, .chart-card, .table-card, .products-card').forEach((el, i) => {
+    el.style.transitionDelay = (i * 60) + 'ms';
+    obs.observe(el);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  animateCards();
+  buildLineChart(revenueData);
+  buildDonutChart();
+  buildTransactions();
+  buildProducts();
+  setupNav();
+});
+</script>
 </body>
 </html>
