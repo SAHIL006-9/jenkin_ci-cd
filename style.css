@@ -1,0 +1,92 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: #f4f4f4;
+    transition: 0.3s;
+}
+
+/* Header */
+header {
+    background: linear-gradient(45deg, #1e90ff, #00c6ff);
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Navbar */
+nav {
+    background: #222;
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+}
+
+nav a {
+    color: white;
+    margin: 0 15px;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+nav a:hover {
+    color: #00c6ff;
+}
+
+/* Hero Section */
+.hero {
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: url('https://picsum.photos/1600/900') no-repeat center/cover;
+    color: white;
+    text-align: center;
+}
+
+.hero h2 {
+    font-size: 40px;
+}
+
+.hero p {
+    margin: 10px 0;
+}
+
+.hero button {
+    margin: 5px;
+    padding: 10px 20px;
+    border: none;
+    background: #00c6ff;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.hero button:hover {
+    background: #1e90ff;
+}
+
+/* Content */
+.container {
+    padding: 40px;
+    text-align: center;
+}
+
+/* Footer */
+footer {
+    background: #222;
+    color: white;
+    text-align: center;
+    padding: 15px;
+}
+
+/* Dark Mode */
+.dark-mode {
+    background: #111;
+    color: white;
+}
