@@ -169,10 +169,10 @@ html, body { height:100%; font-family:'DM Sans',sans-serif; background:var(--bg)
   </nav>
   <div class="sidebar-footer">
     <div class="user-info">
-      <div class="avatar">SK</div>
+      <div class="avatar" id="sidebar-avatar">SK</div>
       <div>
-        <div class="user-name">Sahil Kumar</div>
-        <div class="user-role">Admin</div>
+        <div class="user-name" id="sidebar-name">Sahil Kumar</div>
+        <div class="user-role" id="sidebar-role">Admin</div>
       </div>
     </div>
   </div>
@@ -463,56 +463,64 @@ function buildProdsPage(){
   allProds.forEach(p=>{tb.innerHTML+=`<tr><td><div class="client-cell"><span style="font-size:18px">${p.ic}</span><span class="client-name">${p.n}</span></div></td><td style="color:var(--text-sec)">${p.cat}</td><td style="font-weight:600">${p.pr}</td><td>${p.u}</td><td style="font-weight:600">${p.r}</td><td style="color:var(--green);font-weight:600">${p.m}</td><td><span class="status-badge ${p.st}">${cap(p.st)}</span></td></tr>`;});
 }
 
-/* ── Settings: persist to localStorage & update sidebar ── */
+/* ── Settings: save & live-update sidebar ── */
 const SETTINGS_KEY = 'finflow_settings';
+
+function g(id) { return document.getElementById(id); }
+
+function applySidebar(first, last, role) {
+  const fullName = (first + ' ' + last).trim();
+  const initials = ((first[0]||'S') + (last[0]||'K')).toUpperCase();
+  // target sidebar specifically by ID
+  document.getElementById('sidebar-name').textContent   = fullName  || 'Sahil Kumar';
+  document.getElementById('sidebar-avatar').textContent = initials  || 'SK';
+  document.getElementById('sidebar-role').textContent   = role      || 'Admin';
+}
 
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
   if (!raw) return;
-  const s = JSON.parse(raw);
-  if (s.firstName)   document.getElementById('s-fname').value   = s.firstName;
-  if (s.lastName)    document.getElementById('s-lname').value   = s.lastName;
-  if (s.email)       document.getElementById('s-email').value   = s.email;
-  if (s.phone)       document.getElementById('s-phone').value   = s.phone;
-  if (s.role)        document.getElementById('s-role').value    = s.role;
-  if (s.company)     document.getElementById('s-company').value = s.company;
-  if (s.gst)         document.getElementById('s-gst').value     = s.gst;
-  if (s.currency)    document.getElementById('s-currency').value= s.currency;
-  if (s.timezone)    document.getElementById('s-timezone').value= s.timezone;
-  applySidebarName(s.firstName, s.lastName, s.role);
-}
-
-function applySidebarName(first, last, role) {
-  const full = (first + ' ' + last).trim();
-  if (full) document.querySelector('.user-name').textContent = full;
-  const initials = ((first||'S')[0] + (last||'K')[0]).toUpperCase();
-  document.querySelector('.avatar').textContent = initials;
-  if (role) document.querySelector('.user-role').textContent = role;
+  try {
+    const s = JSON.parse(raw);
+    if (s.firstName) g('s-fname').value    = s.firstName;
+    if (s.lastName)  g('s-lname').value    = s.lastName;
+    if (s.email)     g('s-email').value    = s.email;
+    if (s.phone)     g('s-phone').value    = s.phone;
+    if (s.role)      g('s-role').value     = s.role;
+    if (s.company)   g('s-company').value  = s.company;
+    if (s.gst)       g('s-gst').value      = s.gst;
+    if (s.currency)  g('s-currency').value = s.currency;
+    if (s.timezone)  g('s-timezone').value = s.timezone;
+    applySidebar(s.firstName||'Sahil', s.lastName||'Kumar', s.role||'Admin');
+  } catch(e) { console.warn('Settings load error', e); }
 }
 
 function showSaved() {
-  // Read all fields
-  const s = {
-    firstName: document.getElementById('s-fname').value.trim(),
-    lastName:  document.getElementById('s-lname').value.trim(),
-    email:     document.getElementById('s-email').value.trim(),
-    phone:     document.getElementById('s-phone').value.trim(),
-    role:      document.getElementById('s-role').value,
-    company:   document.getElementById('s-company').value.trim(),
-    gst:       document.getElementById('s-gst').value.trim(),
-    currency:  document.getElementById('s-currency').value,
-    timezone:  document.getElementById('s-timezone').value,
-  };
-  // Validate required fields
-  if (!s.firstName || !s.lastName) {
+  const first   = g('s-fname').value.trim();
+  const last    = g('s-lname').value.trim();
+  const email   = g('s-email').value.trim();
+  const phone   = g('s-phone').value.trim();
+  const role    = g('s-role').value;
+  const company = g('s-company').value.trim();
+  const gst     = g('s-gst').value.trim();
+  const currency= g('s-currency').value;
+  const timezone= g('s-timezone').value;
+
+  // Validation
+  if (!first || !last) {
     showMsg('errorMsg', '⚠️ First name and last name are required.'); return;
   }
-  if (s.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.email)) {
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     showMsg('errorMsg', '⚠️ Please enter a valid email address.'); return;
   }
-  // Save & apply
+
+  // Persist
+  const s = { firstName:first, lastName:last, email, phone, role, company, gst, currency, timezone };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-  applySidebarName(s.firstName, s.lastName, s.role);
+
+  // Update sidebar immediately
+  applySidebar(first, last, role);
+
   showMsg('savedMsg', '✓ Changes saved successfully!');
 }
 
