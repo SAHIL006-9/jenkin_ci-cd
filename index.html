@@ -310,19 +310,19 @@ html, body { height:100%; font-family:'DM Sans',sans-serif; background:var(--bg)
       <div class="section-card">
         <h2 class="section-title">Profile</h2><p class="section-sub">Update your personal information</p>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">First Name</label><input class="form-input" value="Sahil"></div>
-          <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" value="Kumar"></div>
+          <div class="form-group"><label class="form-label">First Name</label><input id="s-fname" class="form-input" value="Sahil"></div>
+          <div class="form-group"><label class="form-label">Last Name</label><input id="s-lname" class="form-input" value="Kumar"></div>
         </div>
-        <div class="form-group"><label class="form-label">Email</label><input class="form-input" value="sahil.kumar@finflow.in"></div>
-        <div class="form-group"><label class="form-label">Phone</label><input class="form-input" value="+91 98765 43210"></div>
-        <div class="form-group"><label class="form-label">Role</label><select class="form-select"><option selected>Admin</option><option>Manager</option><option>Analyst</option></select></div>
+        <div class="form-group"><label class="form-label">Email</label><input id="s-email" class="form-input" value="sahil.kumar@finflow.in"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input id="s-phone" class="form-input" value="+91 98765 43210"></div>
+        <div class="form-group"><label class="form-label">Role</label><select id="s-role" class="form-select"><option value="Admin" selected>Admin</option><option value="Manager">Manager</option><option value="Analyst">Analyst</option></select></div>
       </div>
       <div class="section-card">
         <h2 class="section-title">Company</h2><p class="section-sub">Your organisation details</p>
-        <div class="form-group"><label class="form-label">Company Name</label><input class="form-input" value="FinFlow Technologies"></div>
-        <div class="form-group"><label class="form-label">GST Number</label><input class="form-input" value="09AABCU9603R1ZP"></div>
-        <div class="form-group"><label class="form-label">Currency</label><select class="form-select"><option selected>INR (₹)</option><option>USD ($)</option><option>EUR (€)</option></select></div>
-        <div class="form-group"><label class="form-label">Timezone</label><select class="form-select"><option selected>Asia/Kolkata (IST)</option><option>UTC</option><option>America/New_York</option></select></div>
+        <div class="form-group"><label class="form-label">Company Name</label><input id="s-company" class="form-input" value="FinFlow Technologies"></div>
+        <div class="form-group"><label class="form-label">GST Number</label><input id="s-gst" class="form-input" value="09AABCU9603R1ZP"></div>
+        <div class="form-group"><label class="form-label">Currency</label><select id="s-currency" class="form-select"><option value="INR (₹)" selected>INR (₹)</option><option value="USD ($)">USD ($)</option><option value="EUR (€)">EUR (€)</option></select></div>
+        <div class="form-group"><label class="form-label">Timezone</label><select id="s-timezone" class="form-select"><option value="Asia/Kolkata (IST)" selected>Asia/Kolkata (IST)</option><option value="UTC">UTC</option><option value="America/New_York">America/New_York</option></select></div>
       </div>
       <div class="section-card" style="grid-column:1/-1">
         <h2 class="section-title">Notifications</h2><p class="section-sub">Control what alerts you receive</p>
@@ -333,7 +333,7 @@ html, body { height:100%; font-family:'DM Sans',sans-serif; background:var(--bg)
         <div class="toggle-row"><div class="toggle-info"><div class="toggle-name">Low Stock Warning</div><div class="toggle-desc">Alert when product stock falls below threshold</div></div><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
       </div>
     </div>
-    <div class="saved-msg" id="savedMsg"><i class="fa-solid fa-circle-check"></i> Changes saved successfully!</div>
+    <div class="saved-msg" id="savedMsg"></div><div class="saved-msg" id="errorMsg" style="background:var(--red-bg);color:var(--red)"></div>
   </div>
 
 </main>
@@ -463,13 +463,71 @@ function buildProdsPage(){
   allProds.forEach(p=>{tb.innerHTML+=`<tr><td><div class="client-cell"><span style="font-size:18px">${p.ic}</span><span class="client-name">${p.n}</span></div></td><td style="color:var(--text-sec)">${p.cat}</td><td style="font-weight:600">${p.pr}</td><td>${p.u}</td><td style="font-weight:600">${p.r}</td><td style="color:var(--green);font-weight:600">${p.m}</td><td><span class="status-badge ${p.st}">${cap(p.st)}</span></td></tr>`;});
 }
 
-/* ── Settings ── */
-function showSaved(){const m=document.getElementById('savedMsg');m.style.display='block';setTimeout(()=>m.style.display='none',3000);}
+/* ── Settings: persist to localStorage & update sidebar ── */
+const SETTINGS_KEY = 'finflow_settings';
+
+function loadSettings() {
+  const raw = localStorage.getItem(SETTINGS_KEY);
+  if (!raw) return;
+  const s = JSON.parse(raw);
+  if (s.firstName)   document.getElementById('s-fname').value   = s.firstName;
+  if (s.lastName)    document.getElementById('s-lname').value   = s.lastName;
+  if (s.email)       document.getElementById('s-email').value   = s.email;
+  if (s.phone)       document.getElementById('s-phone').value   = s.phone;
+  if (s.role)        document.getElementById('s-role').value    = s.role;
+  if (s.company)     document.getElementById('s-company').value = s.company;
+  if (s.gst)         document.getElementById('s-gst').value     = s.gst;
+  if (s.currency)    document.getElementById('s-currency').value= s.currency;
+  if (s.timezone)    document.getElementById('s-timezone').value= s.timezone;
+  applySidebarName(s.firstName, s.lastName, s.role);
+}
+
+function applySidebarName(first, last, role) {
+  const full = (first + ' ' + last).trim();
+  if (full) document.querySelector('.user-name').textContent = full;
+  const initials = ((first||'S')[0] + (last||'K')[0]).toUpperCase();
+  document.querySelector('.avatar').textContent = initials;
+  if (role) document.querySelector('.user-role').textContent = role;
+}
+
+function showSaved() {
+  // Read all fields
+  const s = {
+    firstName: document.getElementById('s-fname').value.trim(),
+    lastName:  document.getElementById('s-lname').value.trim(),
+    email:     document.getElementById('s-email').value.trim(),
+    phone:     document.getElementById('s-phone').value.trim(),
+    role:      document.getElementById('s-role').value,
+    company:   document.getElementById('s-company').value.trim(),
+    gst:       document.getElementById('s-gst').value.trim(),
+    currency:  document.getElementById('s-currency').value,
+    timezone:  document.getElementById('s-timezone').value,
+  };
+  // Validate required fields
+  if (!s.firstName || !s.lastName) {
+    showMsg('errorMsg', '⚠️ First name and last name are required.'); return;
+  }
+  if (s.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.email)) {
+    showMsg('errorMsg', '⚠️ Please enter a valid email address.'); return;
+  }
+  // Save & apply
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  applySidebarName(s.firstName, s.lastName, s.role);
+  showMsg('savedMsg', '✓ Changes saved successfully!');
+}
+
+function showMsg(id, text) {
+  document.querySelectorAll('.saved-msg').forEach(el => el.style.display = 'none');
+  const m = document.getElementById(id);
+  m.textContent = text;
+  m.style.display = 'block';
+  setTimeout(() => m.style.display = 'none', 3500);
+}
 
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded',()=>{
   buildLineChart(revData); buildDonut(); buildTx(); buildProdList();
-  buildInvoices(); renderClients(clientData); buildProdsPage();
+  buildInvoices(); renderClients(clientData); buildProdsPage(); loadSettings();
 });
 </script>
 </body>
